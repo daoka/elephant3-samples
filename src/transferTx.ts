@@ -1,5 +1,5 @@
 import * as dotenv from 'dotenv';
-import { Account, NetworkType, TransferTransaction, Deadline, Address, Mosaic, MosaicId, UInt64, EmptyMessage, TransactionHttp, Listener } from 'nem2-sdk';
+import { Account, NetworkType, TransferTransaction, Deadline, Address, MosaicId, EmptyMessage, TransactionHttp, Listener, NetworkCurrencyMosaic } from 'nem2-sdk';
 import { filter } from 'rxjs/operators';
 
 dotenv.config();
@@ -9,13 +9,12 @@ const listener = new Listener(process.env.API_ENDPOINT);
 
 const account = Account.createFromPrivateKey(process.env.ACCOUNT_PRIVATE_KEY, NetworkType.MIJIN_TEST);
 console.log(account.address.plain());
-const catCurrency = new MosaicId(process.env.CAT_CURRENCY_ID);
-const distAddress = Address.createFromRawAddress('SCO3VK-XYR2X3-ZRIDKZ-SZQ53H-RAVIRK-G6L4B2-USYH');
+const distAddress = Address.createFromRawAddress('SAZWJ2-J75NPY-S2OF6V-4NR6Z6-A5EKPD-A6CR45-VVFK');
 
 const transferTx = TransferTransaction.create(
   Deadline.create(),
   distAddress,
-  [new Mosaic(catCurrency, UInt64.fromUint(10))],
+  [NetworkCurrencyMosaic.createRelative(100)],
   EmptyMessage,
   NetworkType.MIJIN_TEST
 );
