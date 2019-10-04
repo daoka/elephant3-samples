@@ -1,5 +1,5 @@
 import * as dotenv from 'dotenv';
-import { Account, NetworkType, TransferTransaction, Deadline, Address, MosaicId, EmptyMessage, TransactionHttp, Listener, NetworkCurrencyMosaic } from 'nem2-sdk';
+import { Account, NetworkType, TransferTransaction, Deadline, Address, EmptyMessage, TransactionHttp, Listener, NetworkCurrencyMosaic } from 'nem2-sdk';
 import { filter } from 'rxjs/operators';
 
 dotenv.config();
