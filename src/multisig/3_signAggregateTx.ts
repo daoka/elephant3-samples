@@ -16,8 +16,7 @@ const multisigAccount = PublicAccount.createFromPublicKey(multisigAccountPubKey,
 const signerAccountKey = 'INPUT_OTHER_COSIGNATORY_PRIVATE_KEY';
 const signerAccount = Account.createFromPrivateKey(signerAccountKey, NetworkType.MIJIN_TEST);
 
-const targetHash =
-'INPUT_TARGET_MULTISIG_TRANSACTION_HASH';
+const targetHash = 'INPUT_TARGET_MULTISIG_TRANSACTION_HASH';
 
 const accountHttp = new AccountHttp(process.env.API_ENDPOINT);
 const transactionHttp = new TransactionHttp(process.env.API_ENDPOINT);
