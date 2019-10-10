@@ -1,3 +1,3 @@
-# Elephant3 Sample
+# Fushicho Sample
 
-NEM2(Catapult) Elephant3 Samples.
+NEM2(Catapult) Fushicho(不死鳥) Samples.
