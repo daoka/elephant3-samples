@@ -10,7 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "dotenv": "^8.1.0",
-    "nem2-sdk": "^0.14.1",
+    "nem2-sdk": "^0.14.3",
     "rxjs": "^6.5.3"
   },
   "devDependencies": {
