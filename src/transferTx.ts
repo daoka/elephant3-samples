@@ -1,22 +1,23 @@
 import * as dotenv from 'dotenv';
-import { Account, NetworkType, TransferTransaction, Deadline, Address, EmptyMessage, TransactionHttp, Listener, NetworkCurrencyMosaic } from 'nem2-sdk';
-import { filter } from 'rxjs/operators';
+import { Account, NetworkType, TransferTransaction, Deadline, Address, EmptyMessage, Listener, NetworkCurrencyMosaic, UInt64, TransactionService } from 'nem2-sdk';
 
 dotenv.config();
 
-const transactionHttp = new TransactionHttp(process.env.API_ENDPOINT);
 const listener = new Listener(process.env.API_ENDPOINT);
+const transactionService = new TransactionService(process.env.API_ENDPOINT);
+const networkType = Number(process.env.NETWORK_TYPE);
 
-const account = Account.createFromPrivateKey(process.env.ACCOUNT_PRIVATE_KEY, NetworkType.MIJIN_TEST);
+const account = Account.createFromPrivateKey(process.env.ACCOUNT_PRIVATE_KEY, networkType);
 console.log(account.address.plain());
-const distAddress = Address.createFromRawAddress('SAZWJ2-J75NPY-S2OF6V-4NR6Z6-A5EKPD-A6CR45-VVFK');
+const distAddress = Address.createFromRawAddress('TB2CDF-L7AY4B-NE5WUB-7U5TEQ-DTTWZB-R2TQT7-WBKH');
 
 const transferTx = TransferTransaction.create(
   Deadline.create(),
   distAddress,
   [NetworkCurrencyMosaic.createRelative(100)],
   EmptyMessage,
-  NetworkType.MIJIN_TEST
+  networkType,
+  UInt64.fromUint(20000)
 );
 
 const signedTx = account.sign(transferTx, process.env.GENERATION_HASH);
@@ -24,27 +25,13 @@ const signedTx = account.sign(transferTx, process.env.GENERATION_HASH);
 console.log(`txHash: ${signedTx.hash}`);
 
 listener.open().then(() => {
-  listener.status(account.address)
-  .pipe(filter(error => error.hash === signedTx.hash))
-  .subscribe(err => {
-    console.error(err);
-    listener.close();
-  },
-  err => {
-    console.error(err);
-  });
-  listener.unconfirmedAdded(account.address)
-  .pipe(
-    filter(transaction => (transaction.transactionInfo !== undefined)
-    && transaction.transactionInfo.hash === signedTx.hash)
-  ).subscribe(ignored => {
-    console.log('transaction status changed unconfirmed');
-    listener.close();
-  });
-
-  transactionHttp.announce(signedTx).subscribe(x => {
-    console.log(x);
-  }, err => {
-    console.error(err);
-  })
+  transactionService.announce(signedTx, listener).subscribe(
+    (x) => {
+      console.log(x);
+      listener.close();
+    }, (err) => {
+      console.error(err);
+      listener.close();
+    }
+  )
 });

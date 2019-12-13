@@ -1,12 +1,12 @@
 import * as dotenv from 'dotenv';
-import { NamespaceHttp, UInt64, NamespaceId, NamespaceName } from 'nem2-sdk';
-import { mergeMap, map } from 'rxjs/operators';
+import { NamespaceHttp, UInt64, NamespaceId } from 'nem2-sdk';
+import { mergeMap } from 'rxjs/operators';
 
 dotenv.config();
 
 const namespaceHttp = new NamespaceHttp(process.env.API_ENDPOINT);
 
-const id = UInt64.fromHex('DC0DCCEF7B7BED17');
+const id = UInt64.fromHex('85BBEA6CC462B244');
 const ids: number[] = [id.lower, id.higher];
 const namespaceId = new NamespaceId(ids);
 

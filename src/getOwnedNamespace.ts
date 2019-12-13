@@ -5,7 +5,8 @@ import { mergeMap } from 'rxjs/operators';
 dotenv.config();
 
 const namespaceHttp = new NamespaceHttp(process.env.API_ENDPOINT);
-const account = Account.createFromPrivateKey(process.env.ACCOUNT_PRIVATE_KEY, NetworkType.MIJIN_TEST);
+const networkType = Number(process.env.NETWORK_TYPE);
+const account = Account.createFromPrivateKey(process.env.ACCOUNT_PRIVATE_KEY, networkType);
 
 namespaceHttp.getNamespacesFromAccount(account.address)
 .pipe(mergeMap((_) => _))

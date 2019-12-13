@@ -1,5 +1,5 @@
 import * as dotenv from 'dotenv';
-import { TransactionHttp, Listener, Account, NetworkType, KeyGenerator, MetadataTransactionService, MetadataHttp, Deadline, MetadataType, AggregateTransaction, UInt64 } from 'nem2-sdk';
+import { TransactionHttp, Listener, Account, KeyGenerator, MetadataTransactionService, MetadataHttp, Deadline, MetadataType, AggregateTransaction, UInt64 } from 'nem2-sdk';
 import { mergeMap, filter } from 'rxjs/operators';
 import { of } from 'rxjs';
 
@@ -35,7 +35,7 @@ const signedTx = accountMetadataTx.pipe(
       [transaction.toAggregate(account.publicAccount)],
       networkType,
       [],
-      UInt64.fromUint(29700),
+      UInt64.fromUint(29700)
     );
     const signedTx = account.sign(aggregateTx, process.env.GENERATION_HASH);
     return of(signedTx);

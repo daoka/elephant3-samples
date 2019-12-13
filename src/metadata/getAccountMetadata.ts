@@ -1,10 +1,11 @@
 import * as dotenv from 'dotenv';
-import { MetadataHttp, Account, NetworkType, Metadata, KeyPair, KeyGenerator, UInt64 } from 'nem2-sdk';
+import { MetadataHttp, Account, Metadata } from 'nem2-sdk';
 
 dotenv.config();
 
 const metadataHttp = new MetadataHttp(process.env.API_ENDPOINT);
-const account = Account.createFromPrivateKey(process.env.ACCOUNT_PRIVATE_KEY, NetworkType.MIJIN_TEST);
+const networkType = Number(process.env.NETWORK_TYPE);
+const account = Account.createFromPrivateKey(process.env.ACCOUNT_PRIVATE_KEY, networkType);
 
 metadataHttp.getAccountMetadata(account.address).subscribe(
   metadata => {

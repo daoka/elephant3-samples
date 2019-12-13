@@ -1,13 +1,14 @@
 import * as dotenv from 'dotenv';
-import { TransactionHttp, Listener, Account, NetworkType, KeyGenerator, AccountMetadataTransaction, Deadline, AggregateTransaction } from 'nem2-sdk';
+import { TransactionHttp, Listener, Account, NetworkType, KeyGenerator, AccountMetadataTransaction, Deadline, AggregateTransaction, UInt64 } from 'nem2-sdk';
 import { filter } from 'rxjs/operators';
 
 dotenv.config();
 
 const transactionHttp = new TransactionHttp(process.env.API_ENDPOINT);
 const listener = new Listener(process.env.API_ENDPOINT);
+const networkType = Number(process.env.NETWORK_TYPE);
 
-const account = Account.createFromPrivateKey(process.env.ACCOUNT_PRIVATE_KEY, NetworkType.MIJIN_TEST);
+const account = Account.createFromPrivateKey(process.env.ACCOUNT_PRIVATE_KEY, networkType);
 
 const key = KeyGenerator.generateUInt64Key('icon');
 const value = 'http://placehold.jp/150x150.png';
@@ -18,19 +19,21 @@ const accountMetadataTx = AccountMetadataTransaction.create(
   key,
   value.length,
   value,
-  NetworkType.MIJIN_TEST
+  networkType
 );
 
 const aggregateTx = AggregateTransaction.createComplete(
   Deadline.create(),
   [accountMetadataTx.toAggregate(account.publicAccount)],
-  NetworkType.MIJIN_TEST,
-  []
+  networkType,
+  [],
+  UInt64.fromUint(29700),
 );
 
 const signedTx = account.sign(aggregateTx, process.env.GENERATION_HASH);
 
 console.log(`txHash: ${signedTx.hash}`);
+
 
 listener.open().then(() => {
   listener.status(account.address)
@@ -54,6 +57,5 @@ listener.open().then(() => {
     console.log(x);
   }, err => {
     console.error(err);
-  })
-
-})
+  });
+});

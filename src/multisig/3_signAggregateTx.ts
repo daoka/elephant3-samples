@@ -4,6 +4,8 @@ import { mergeMap, filter, map } from 'rxjs/operators';
 
 dotenv.config();
 
+const networkType = Number(process.env.NETWORK_TYPE);
+
 const cosignAggregateBondedTx = (transaction: AggregateTransaction, account: Account): CosignatureSignedTransaction => {
   console.log(transaction);
   const cosignatureTx = CosignatureTransaction.create(transaction);
@@ -11,17 +13,17 @@ const cosignAggregateBondedTx = (transaction: AggregateTransaction, account: Acc
 };
 
 const multisigAccountPubKey = 'INPUT_MULTISIG_ACCOUNT_PUBLIC_KEY';
-const multisigAccount = PublicAccount.createFromPublicKey(multisigAccountPubKey, NetworkType.MIJIN_TEST);
+const multisigAccount = PublicAccount.createFromPublicKey(multisigAccountPubKey, networkType);
 
 const signerAccountKey = 'INPUT_OTHER_COSIGNATORY_PRIVATE_KEY';
-const signerAccount = Account.createFromPrivateKey(signerAccountKey, NetworkType.MIJIN_TEST);
+const signerAccount = Account.createFromPrivateKey(signerAccountKey, networkType);
 
 const targetHash = 'INPUT_TARGET_MULTISIG_TRANSACTION_HASH';
 
 const accountHttp = new AccountHttp(process.env.API_ENDPOINT);
 const transactionHttp = new TransactionHttp(process.env.API_ENDPOINT);
 
-accountHttp.aggregateBondedTransactions(multisigAccount.address)
+accountHttp.getAccountPartialTransactions(multisigAccount.address)
 .pipe(
   mergeMap((_) => _),
   filter((_) => !_.signedByAccount(signerAccount.publicAccount) &&

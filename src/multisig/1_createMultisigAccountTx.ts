@@ -1,25 +1,26 @@
 import * as dotenv from 'dotenv';
-import { TransactionHttp, NetworkType, Account, MultisigAccountModificationTransaction, Deadline, MultisigCosignatoryModification, CosignatoryModificationAction, AggregateTransaction, Listener, TransferTransaction, EmptyMessage, NetworkCurrencyMosaic, Address } from 'nem2-sdk';
+import { TransactionHttp, Account, MultisigAccountModificationTransaction, Deadline, AggregateTransaction, Listener, TransferTransaction, EmptyMessage, NetworkCurrencyMosaic, Address, UInt64 } from 'nem2-sdk';
 import { filter } from 'rxjs/operators';
 
 dotenv.config();
 
 const transactionHttp = new TransactionHttp(process.env.API_ENDPOINT);
 const listener = new Listener(process.env.API_ENDPOINT);
+const networkType = Number(process.env.NETWORK_TYPE);
 
 const sendCurrencyTx = (dist: Address) => {
   const tx = TransferTransaction.create(
     Deadline.create(),
     dist,
-    [NetworkCurrencyMosaic.createRelative(100)],
+    [NetworkCurrencyMosaic.createRelative(10000)],
     EmptyMessage,
-    NetworkType.MIJIN_TEST
+    networkType,
   );
   return tx;
 }
 
 const generateAccount = (tag: string) => {
-  const account = Account.generateNewAccount(NetworkType.MIJIN_TEST);
+  const account = Account.generateNewAccount(networkType);
   console.log(`--- account info ${tag} ---`);
   console.log(`address: ${account.address.plain()}`);
   console.log(`public key: ${account.publicKey}`);
@@ -27,7 +28,7 @@ const generateAccount = (tag: string) => {
   return account;
 }
 
-const currencySenderAccount = Account.createFromPrivateKey(process.env.ACCOUNT_PRIVATE_KEY, NetworkType.MIJIN_TEST);
+const currencySenderAccount = Account.createFromPrivateKey(process.env.ACCOUNT_PRIVATE_KEY, networkType);
 const multisigAccount = generateAccount('multisig account');
 const cosignatory1 = generateAccount('cosignatory1');
 const cosignatory2 = generateAccount('cosignatory2');
@@ -37,7 +38,7 @@ const emptyTransaction = TransferTransaction.create(
   multisigAccount.address,
   [],
   EmptyMessage,
-  NetworkType.MIJIN_TEST,
+  networkType,
 );
 
 const convertIntoMultisigTx = MultisigAccountModificationTransaction.create(
@@ -45,16 +46,11 @@ const convertIntoMultisigTx = MultisigAccountModificationTransaction.create(
   2,
   1,
   [
-    new MultisigCosignatoryModification(
-      CosignatoryModificationAction.Add,
-      cosignatory1.publicAccount
-    ),
-    new MultisigCosignatoryModification(
-      CosignatoryModificationAction.Add,
-      cosignatory2.publicAccount
-    ),
+    cosignatory1.publicAccount,
+    cosignatory2.publicAccount,
   ],
-  NetworkType.MIJIN_TEST
+  [],
+  networkType,
 );
 
 const sendCurrencyToMultisigAccount = sendCurrencyTx(multisigAccount.address);
@@ -71,8 +67,9 @@ const aggregateTx = AggregateTransaction.createComplete(
     emptyTransaction.toAggregate(cosignatory2.publicAccount),
     convertIntoMultisigTx.toAggregate(multisigAccount.publicAccount),
   ],
-  NetworkType.MIJIN_TEST,
-  []
+  networkType,
+  [],
+  UInt64.fromUint(107000),
 );
 
 const signedTx = currencySenderAccount.signTransactionWithCosignatories(

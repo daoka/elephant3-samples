@@ -4,11 +4,13 @@ import { } from 'rxjs/operators';
 
 dotenv.config();
 
+const networkType = Number(process.env.NETWORK_TYPE);
+
 const multisigAccountPubKey = 'INPUT_MULTISIG_ACCOUNT_PUBLIC_KEY';
-const multisigAccount = PublicAccount.createFromPublicKey(multisigAccountPubKey, NetworkType.MIJIN_TEST);
+const multisigAccount = PublicAccount.createFromPublicKey(multisigAccountPubKey, networkType);
 
 const accountHttp = new AccountHttp(process.env.API_ENDPOINT);
-accountHttp.aggregateBondedTransactions(multisigAccount.address).subscribe(
+accountHttp.getAccountPartialTransactions(multisigAccount.address).subscribe(
   x => {
     console.log(x);
   }, err => {

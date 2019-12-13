@@ -1,13 +1,13 @@
 import * as dotenv from 'dotenv';
-import { TransactionHttp, Listener, Account, NetworkType, MosaicDefinitionTransaction, Deadline, MosaicNonce, MosaicId, MosaicFlags, UInt64, MosaicSupplyChangeTransaction, MosaicSupplyChangeAction, AggregateTransaction } from 'nem2-sdk';
-import { filter } from 'rxjs/operators';
+import { Listener, Account, MosaicDefinitionTransaction, Deadline, MosaicNonce, MosaicId, MosaicFlags, UInt64, MosaicSupplyChangeTransaction, MosaicSupplyChangeAction, AggregateTransaction, TransactionService } from 'nem2-sdk';
 
 dotenv.config();
 
-const transactionHttp = new TransactionHttp(process.env.API_ENDPOINT);
 const listener = new Listener(process.env.API_ENDPOINT);
+const transactionService = new TransactionService(process.env.API_ENDPOINT);
+const networkType = Number(process.env.NETWORK_TYPE);
 
-const account = Account.createFromPrivateKey(process.env.ACCOUNT_PRIVATE_KEY, NetworkType.MIJIN_TEST);
+const account = Account.createFromPrivateKey(process.env.ACCOUNT_PRIVATE_KEY, networkType);
 
 const nonce = MosaicNonce.createRandom();
 
@@ -18,7 +18,7 @@ const mosaicDefinitionTx = MosaicDefinitionTransaction.create(
   MosaicFlags.create(false, true, false),
   0,
   UInt64.fromUint(0),
-  NetworkType.MIJIN_TEST
+  networkType
 );
 
 const mosaicSupplyChangeTx = MosaicSupplyChangeTransaction.create(
@@ -26,7 +26,7 @@ const mosaicSupplyChangeTx = MosaicSupplyChangeTransaction.create(
   mosaicDefinitionTx.mosaicId,
   MosaicSupplyChangeAction.Increase,
   UInt64.fromUint(10000),
-  NetworkType.MIJIN_TEST
+  networkType
 );
 
 const aggregateTx = AggregateTransaction.createComplete(
@@ -35,8 +35,9 @@ const aggregateTx = AggregateTransaction.createComplete(
     mosaicDefinitionTx.toAggregate(account.publicAccount),
     mosaicSupplyChangeTx.toAggregate(account.publicAccount),
   ],
-  NetworkType.MIJIN_TEST,
-  []
+  networkType,
+  [],
+  UInt64.fromUint(31200)
 );
 
 const signedTx = account.sign(aggregateTx, process.env.GENERATION_HASH);
@@ -44,27 +45,13 @@ const signedTx = account.sign(aggregateTx, process.env.GENERATION_HASH);
 console.log(`txHash: ${signedTx.hash}`);
 
 listener.open().then(() => {
-  listener.status(account.address)
-  .pipe(filter(error => error.hash === signedTx.hash))
-  .subscribe(err => {
-    console.error(err);
-    listener.close();
-  },
-  err => {
-    console.error(err);
-  });
-  listener.unconfirmedAdded(account.address)
-  .pipe(
-    filter(transaction => (transaction.transactionInfo !== undefined)
-    && transaction.transactionInfo.hash === signedTx.hash)
-  ).subscribe(ignored => {
-    console.log('transaction status changed unconfirmed');
-    listener.close();
-  });
-
-  transactionHttp.announce(signedTx).subscribe(x => {
-    console.log(x);
-  }, err => {
-    console.error(err);
-  });
+  transactionService.announce(signedTx, listener).subscribe(
+    (x) => {
+      console.log(x);
+      listener.close();
+    }, (err) => {
+      console.error(err);
+      listener.close();
+    }
+  )
 });
