@@ -1,5 +1,5 @@
 import * as dotenv from 'dotenv';
-import { TransactionService, Listener, Account, PublicAccount, MosaicId, Mosaic, UInt64, TransferTransaction, Deadline, EmptyMessage, AggregateTransaction, HashLockTransaction, NetworkCurrencyMosaic, TransactionHttp, Address } from 'nem2-sdk';
+import { TransactionService, Listener, Account, PublicAccount, MosaicId, Mosaic, UInt64, TransferTransaction, Deadline, EmptyMessage, AggregateTransaction, HashLockTransaction, NetworkCurrencyMosaic, TransactionHttp } from 'nem2-sdk';
 import { filter, mergeMap } from 'rxjs/operators';
 
 dotenv.config();
@@ -17,15 +17,15 @@ const mosaic2 = new Mosaic(new MosaicId('3B6EDB5D513D3B95'), UInt64.fromUint(100
 
 const tx1 = TransferTransaction.create(
   Deadline.create(),
-  initiatorAccount.address,
-  [],
+  anotherPubAccount.address,
+  [mosaic1],
   EmptyMessage,
   networkType,
 );
 
 const tx2 = TransferTransaction.create(
   Deadline.create(),
-  Address.createFromRawAddress('TBSZJJ-IW25MG-HODY6Y-YZGRKP-FHAM2S-SZ5PIM-N42E'),
+  initiatorAccount.address,
   [mosaic2],
   EmptyMessage,
   networkType
