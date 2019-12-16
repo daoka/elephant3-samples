@@ -1,32 +1,40 @@
 import * as dotenv from 'dotenv';
-import { TransactionService, Listener, Account, PublicAccount, MosaicId, Mosaic, UInt64, TransferTransaction, Deadline, EmptyMessage, AggregateTransaction, HashLockTransaction, NetworkCurrencyMosaic, TransactionHttp } from 'nem2-sdk';
+import { TransactionService, Listener, Account, PublicAccount, Mosaic, UInt64, TransferTransaction, Deadline, EmptyMessage, AggregateTransaction, HashLockTransaction, NetworkCurrencyMosaic, TransactionHttp, NamespaceId } from 'nem2-sdk';
 import { filter, mergeMap } from 'rxjs/operators';
 
 dotenv.config();
 
 const transactionService = new TransactionService(process.env.API_ENDPOINT);
-const transactionHttp = new TransactionHttp(process.env.API_ENDPOINT);
 const listener = new Listener(process.env.API_ENDPOINT);
 const networkType = Number(process.env.NETWORK_TYPE);
 
-const initiatorAccount = Account.createFromPrivateKey(process.env.ACCOUNT_PRIVATE_KEY, networkType);
-const anotherPubAccount = PublicAccount.createFromPublicKey('D8FA943C8CEC8B4E9FFD55A9240AED9D162F3D1611545E3CDFEA5CD5BFD20756', networkType);
+const gameCompanyAccount = Account.createFromPrivateKey(process.env.ACCOUNT_PRIVATE_KEY, networkType);
+const alicePubAccount = PublicAccount.createFromPublicKey('9DA3C6382CA17E655ECB3ACC57D9D4ECEA4D3CB1A3318F1C8196CE8BBA0D3901', networkType);
+const bobPubAccount  = PublicAccount.createFromPublicKey('B5A0E98DFD41C3D68B21DF7AEC77C848AF19D0DB15C9269368ECF6A4B0D1328F', networkType);
 
-const mosaic1 = new Mosaic(new MosaicId('6B42A00F3F36F070'), UInt64.fromUint(100));
-const mosaic2 = new Mosaic(new MosaicId('3B6EDB5D513D3B95'), UInt64.fromUint(100));
+const gameCurrency = new Mosaic(new NamespaceId('game_company.currency'), UInt64.fromUint(100));
+const gameItem = new Mosaic(new NamespaceId('game_company.item'), UInt64.fromUint(1));
 
 const tx1 = TransferTransaction.create(
   Deadline.create(),
-  anotherPubAccount.address,
-  [mosaic1],
+  bobPubAccount.address,
+  [gameItem],
   EmptyMessage,
   networkType,
 );
 
 const tx2 = TransferTransaction.create(
   Deadline.create(),
-  initiatorAccount.address,
-  [mosaic2],
+  alicePubAccount.address,
+  [gameCurrency],
+  EmptyMessage,
+  networkType
+);
+
+const dummyTx = TransferTransaction.create(
+  Deadline.create(),
+  gameCompanyAccount.address,
+  [],
   EmptyMessage,
   networkType
 );
@@ -34,15 +42,16 @@ const tx2 = TransferTransaction.create(
 const aggregateTx = AggregateTransaction.createBonded(
   Deadline.create(),
   [
-    tx1.toAggregate(initiatorAccount.publicAccount),
-    tx2.toAggregate(anotherPubAccount)
+    tx1.toAggregate(alicePubAccount),
+    tx2.toAggregate(bobPubAccount),
+    dummyTx.toAggregate(gameCompanyAccount.publicAccount),
   ],
   networkType,
   [],
-  UInt64.fromUint(50000)
+  UInt64.fromUint(200000)
 );
 
-const signedTx = initiatorAccount.sign(aggregateTx, process.env.GENERATION_HASH);
+const signedTx = gameCompanyAccount.sign(aggregateTx, process.env.GENERATION_HASH);
 
 console.log(`txHash: ${signedTx.hash}`);
 
@@ -55,33 +64,14 @@ const hashLockTx = HashLockTransaction.create(
   UInt64.fromUint(18400)
 );
 
-const hashLockTxSigned = initiatorAccount.sign(hashLockTx, process.env.GENERATION_HASH);
+const hashLockTxSigned = gameCompanyAccount.sign(hashLockTx, process.env.GENERATION_HASH);
 
 listener.open().then(() => {
-  transactionHttp.announce(hashLockTxSigned)
-  .subscribe(x => console.log(x), err => console.error(err));
-
-  listener.status(initiatorAccount.address).pipe(
-    filter(error => (error.hash === hashLockTxSigned.hash))
-  ).subscribe(err  => {
-    console.error(err);
-    listener.close();
+  transactionService.announceHashLockAggregateBonded(hashLockTxSigned, signedTx, listener).subscribe((x) => {
+    console.log(x);
+    listener.close()
   }, (err) => {
     console.error(err);
     listener.close();
   });
-
-  listener.confirmed(initiatorAccount.address)
-  .pipe(
-    filter((transaction) => transaction.transactionInfo !== undefined &&
-      transaction.transactionInfo.hash === hashLockTxSigned.hash),
-    mergeMap(ignored => transactionHttp.announceAggregateBonded(signedTx))
-  )
-  .subscribe(announcedAggregateBonded => {
-    console.log(announcedAggregateBonded);
-    listener.close();
-  }, err => {
-    console.error(err);
-    listener.close();
-  })
 });
